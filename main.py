@@ -327,7 +327,7 @@ def recette():
         types_accepte = [t for t in types if t in types_neo]
         neo4j_session = neo4j_driver.session()
         if types_accepte:
-            random_skips = 0  # todo?
+            random_skips = 0
             neo_query = neo4j_session.run(
                 """
             MATCH (r:Recette)-[:EST_DE_TYPE]->(t:TypeDePlat) 
