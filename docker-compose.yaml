@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: web
+    ports:
+      - "80:5000"
+    environment:
+      FLASK_APP: main.py
+      FLASK_RUN_HOST: 0.0.0.0
+      MONGO_HOST: db_mongo
+      NEO_HOST: db-neo4j
+    depends_on:
+      - db_mongo
+      - db-neo4j
+    volumes:
+      - .:/OpenFoodFact-Equipe23
+      - .:/536931949_EQUIPE23
+    command: sh -c "flask run --debug"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db_mongo:
+    image: mongo:latest
+    container_name: db_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - .:/536931949_equipe23
+      - ./mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db-neo4j:
+    image: neo4j:5.15
+    container_name: db-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/equipe23
+      NEO4J_server_default__listen__address: 0.0.0.0
+      NEO4J_server_default__advertised__address: db-neo4j
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - ./neo4j_dumps:/dumps
+      - neo4j_import:/import
+      - ./neo4j-init:/docker-entrypoint-initdb.d
+    entrypoint: ["/docker-entrypoint-initdb.d/entrypoint.sh"]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # One-shot service to restore dumps into the running MongoDB container.
+  # Run with `docker compose up mongo_restore` (it will exit after finishing).
+  mongo_restore:
+    image: mongo:latest
+    container_name: mongo_restore
+    depends_on:
+      - db_mongo
+    volumes:
+      - ./mongo-init/dump_staging:/dump_staging:ro
+      - ./mongo-init/run_mongo_restore.sh:/run_mongo_restore.sh:ro
+    entrypoint: ["/run_mongo_restore.sh"]
+    restart: "no"
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:

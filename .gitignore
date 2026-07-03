@@ -1,0 +1,5 @@
+__pycache__/
+.idea/
+.venv/
+guide_alimentaire.txt
+Ajout_category_code.py
